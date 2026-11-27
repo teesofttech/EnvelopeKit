@@ -24,7 +24,7 @@ Candidate manifest fields:
 | `issuedAt`, `expiresAt` | Freshness window |
 | `keys` | Public encryption and response-verification keys |
 
-Each key should have a unique `kid`, a declared purpose (`enc` or `sig`), an allow-listed algorithm, and validity dates. Private key material must never appear in the manifest. The root key signs the manifest. The exact schema and JWS representation remain open.
+Each key should have a unique `kid`, a declared purpose (`enc` or `sig`), an allow-listed algorithm, and validity dates. Private key material must never appear in the manifest. The root key signs the manifest. The exact schema and JWS representation remain open. The current prototype uses P-256 and a compact JWS signature, but these details remain provisional pending broader runtime checks.
 
 Clients should reject invalid signatures, wrong issuer or audience, expired manifests, duplicate key identifiers, key-purpose mismatches, unsupported algorithms, and detectable rollback. Key rotation should publish old and new public keys together for a controlled overlap. Emergency revocation and root-key replacement procedures still need definition.
 
@@ -49,7 +49,7 @@ The API validates that method and target match the actual HTTP request. It authe
 
 The API creates a response envelope containing the protocol version, request identifier, HTTP status, content type, and application JSON response body. It signs this response envelope with a response-signing key from the trusted manifest, then encrypts the signed result to the one-use response public key from the request.
 
-The client decrypts the response, verifies the API signature and key purpose, checks the request identifier, and only then returns the JSON response to the calling application. The JWS and JWE serialisations and the signed content representation remain to be decided and verified across target platforms.
+The client decrypts the response, verifies the API signature and key purpose, checks the request identifier, and only then returns the JSON response to the calling application. The initial prototype uses compact JWS nested inside compact JWE. This round trip passed between .NET and the browser-compatible JavaScript JOSE library under Node.js 24. Actual browser and mobile engine checks remain outstanding before those serialisations and the candidate algorithm profile can be frozen.
 
 Responses for requests rejected before the client response key can be trusted need generic failure handling. Error messages must not expose plaintext, key material, decryption internals, or unnecessary validation distinctions.
 

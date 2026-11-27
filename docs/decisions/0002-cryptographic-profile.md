@@ -23,13 +23,19 @@ JWE specifies authenticated encryption and protected metadata, but does not auth
 
 JWE is selected as the protocol family. This does not freeze a particular JWE serialisation, key curve, JWE algorithm suite, JWS algorithm, or manifest schema. Those choices require an interoperability check in .NET and browser JavaScript, followed by a mobile compatibility check before the wire profile is published as stable.
 
-A candidate profile for the interoperability check is single-recipient JWE using ECDH-ES key agreement with A256GCM content encryption, plus a separate JWS response signature. The exact curve, serialization, JWS signing algorithm, protected headers, and response-signature representation remain undecided. The implementation must use fixed allow-lists and must not negotiate algorithms from untrusted input.
+The first candidate profile is single-recipient compact JWE using ECDH-ES with A256GCM, plus compact JWS using ES256 for API responses. An initial .NET-to-JavaScript interoperability spike has passed for this profile using P-256 keys. Keep it provisional until an actual browser engine and at least one mobile platform are checked. The implementation must use fixed allow-lists and must not negotiate algorithms from untrusted input.
 
 The request plaintext envelope would carry the application JSON, a fresh response public key, a request identifier, an expiry, and the data needed to bind the ciphertext to its HTTP method and target. The server response must be signed with a distinct API signing key and then encrypted to the request's one-use response public key. The API signing key's public counterpart must be authenticated through the key-discovery trust model. This requirement is agreed; the signature algorithm and exact nesting remain undecided.
 
-## Required interoperability check before freezing the wire profile
+## Interoperability evidence and remaining work
 
-- Encrypt and decrypt identical test vectors in .NET and browser JavaScript.
+The prototype at [prototypes/jwe-interop](../prototypes/jwe-interop/README.md) passed a compact JWE round trip between .NET `jose-jwt` 5.3.0 and the browser-compatible Web API implementation in JavaScript `jose` 6.2.16, run under Node.js 24. It also passed .NET JWS ES256 signing with JavaScript verification, and rejected a modified JWE authentication tag. This is useful evidence, but Node.js is not an actual browser engine and no mobile runtime has been checked. The prototype library versions are not production dependency decisions.
+
+Microsoft IdentityModel 8.23.0 is not currently a drop-in implementation for this candidate: its public issue tracker documents direct ECDH-ES handler limitations and ECDH-ES+A*KW with AES-GCM incompatibility. Reassess this before choosing a production .NET JOSE dependency.
+
+Before freezing the wire profile:
+
+- Repeat the scenario in a real browser engine and at least one mobile runtime.
 - Confirm signed key discovery, rotation, and trust-anchor behaviour when TLS terminates at a gateway. See ADR 0003.
 - Confirm mandatory nested sign-then-encrypt response handling and signature-key rotation.
 - Demonstrate strict algorithm allow-listing and rejection of malformed or modified envelopes.

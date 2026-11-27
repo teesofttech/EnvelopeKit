@@ -1,0 +1,11 @@
+{
+  "name": "envelopekit-jwe-interop-spike",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "interop": "node interop.mjs"
+  },
+  "dependencies": {
+    "jose": "6.2.16"
+  }
+}
