@@ -68,7 +68,6 @@ public sealed class EnvelopeHttpClient
         var now = _timeProvider.GetUtcNow();
         var manifest = await _manifestClient.FetchAsync(highestAcceptedManifestVersion, cancellationToken).ConfigureAwait(false);
         var encryptionKey = SelectActiveKey(manifest, "enc", now);
-        var signingKey = SelectActiveKey(manifest, "sig", now);
 
         var bodyBytes = request.Content is null
             ? "{}"u8.ToArray()
@@ -152,6 +151,13 @@ public sealed class EnvelopeHttpClient
         var compactJweResponse = await ReadBoundedAsciiAsync(outerResponse.Content, cancellationToken).ConfigureAwait(false);
         var signedResponse = _cryptography.DecryptCompactJwe(compactJweResponse, responseKey, responseKeyId);
         var compactJws = Encoding.ASCII.GetString(signedResponse);
+        var signingKeyId = ReadCompactJwsKeyId(compactJws);
+        var signingKey = manifest.Keys.SingleOrDefault(key =>
+            key.Use == "sig" &&
+            string.Equals(key.KeyId, signingKeyId, StringComparison.Ordinal) &&
+            key.NotBefore <= now.ToUnixTimeSeconds() &&
+            key.ExpiresAt > now.ToUnixTimeSeconds())
+            ?? throw new EnvelopeProtocolException("The response uses an unknown or inactive signing key.");
         using var apiSigningKey = EnvelopeJwkKeyConverter.ImportPublicEcdsa(
             signingKey.JsonWebKey.GetRawText(),
             signingKey.KeyId);
@@ -200,11 +206,48 @@ public sealed class EnvelopeHttpClient
         DateTimeOffset now)
     {
         var nowUnix = now.ToUnixTimeSeconds();
-        return manifest.Keys.SingleOrDefault(key =>
-                   key.Use == use &&
-                   key.NotBefore <= nowUnix &&
-                   key.ExpiresAt > nowUnix)
+        return manifest.Keys
+                   .Where(key => key.Use == use && key.NotBefore <= nowUnix && key.ExpiresAt > nowUnix)
+                   .OrderByDescending(key => key.NotBefore)
+                   .ThenBy(key => key.KeyId, StringComparer.Ordinal)
+                   .FirstOrDefault()
                ?? throw new EnvelopeProtocolException($"The signed manifest has no currently valid '{use}' key.");
+    }
+
+    private static string ReadCompactJwsKeyId(string compactJws)
+    {
+        var segments = compactJws.Split('.');
+        if (segments.Length != 3 || segments[0].Length == 0)
+        {
+            throw new EnvelopeProtocolException("The encrypted API response does not contain a compact JWS.");
+        }
+
+        try
+        {
+            var encodedHeader = segments[0].Replace('-', '+').Replace('_', '/');
+            encodedHeader = encodedHeader.PadRight(encodedHeader.Length + ((4 - encodedHeader.Length % 4) % 4), '=');
+            using var document = JsonDocument.Parse(Convert.FromBase64String(encodedHeader));
+            var keyIds = document.RootElement.EnumerateObject()
+                .Where(property => property.NameEquals("kid"))
+                .ToArray();
+
+            if (keyIds.Length != 1 ||
+                keyIds[0].Value.ValueKind != JsonValueKind.String ||
+                string.IsNullOrWhiteSpace(keyIds[0].Value.GetString()))
+            {
+                throw new EnvelopeProtocolException("The response signature has no valid key identifier.");
+            }
+
+            return keyIds[0].Value.GetString()!;
+        }
+        catch (FormatException exception)
+        {
+            throw new EnvelopeProtocolException("The response signature header is malformed.", exception);
+        }
+        catch (JsonException exception)
+        {
+            throw new EnvelopeProtocolException("The response signature header is malformed.", exception);
+        }
     }
 
     private static async Task<string> ReadBoundedAsciiAsync(
