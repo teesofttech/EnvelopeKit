@@ -1,12 +1,12 @@
 # ADR 0002: Cryptographic profile and envelope
 
-- Status: Proposed, awaiting review
+- Status: Proposed, threat assumptions agreed; algorithm profile still undecided
 - Decision: No wire protocol or cryptographic profile has been selected.
 - Scope: This ADR compares candidate building blocks for the first .NET SDK and later browser and mobile clients.
 
 ## Requirements
 
-The profile must support selected JSON HTTP bodies, authenticated encryption, strict algorithm allow-lists, API key rotation, a per-request response key, response-origin authentication if the gateway may alter traffic, and implementations across .NET, browser and mobile platforms.
+The profile must support selected JSON HTTP bodies, authenticated encryption, strict algorithm allow-lists, API key rotation, a per-request response key, response-origin authentication, and implementations across .NET, browser and mobile platforms.
 
 The API public key must be authenticated independently of a gateway that terminates TLS. Encryption must not be presented as caller authentication or replay protection.
 
@@ -25,13 +25,13 @@ Prototype JWE first, because its JSON serialisation and existing .NET support ma
 
 A possible profile for evaluation is a single-recipient JWE using an approved ECDH-ES key-agreement mode with AES-GCM content encryption. The exact curve, key-management mode, content-encryption key size, serialization, protected headers, and response-signature construction remain undecided. The implementation must use a fixed allow-list and must not negotiate algorithms from untrusted input.
 
-The request plaintext envelope would carry the application JSON, a fresh response public key, a request identifier, an expiry, and the data needed to bind the ciphertext to its HTTP method and target. The server response would be signed with a distinct API signing key and then encrypted to the request's one-use response public key if response-origin authentication is required for the threat model.
+The request plaintext envelope would carry the application JSON, a fresh response public key, a request identifier, an expiry, and the data needed to bind the ciphertext to its HTTP method and target. The server response must be signed with a distinct API signing key and then encrypted to the request's one-use response public key. The API signing key's public counterpart must be authenticated through the key-discovery trust model. This requirement is agreed; the signature algorithm and exact nesting remain undecided.
 
 ## Required prototype before acceptance
 
 - Encrypt and decrypt identical test vectors in .NET and browser JavaScript.
-- Confirm key discovery, rotation, and trust-anchor behaviour when TLS terminates at a gateway.
-- Confirm nested sign-then-encrypt response handling and signature-key rotation.
+- Confirm signed key discovery, rotation, and trust-anchor behaviour when TLS terminates at a gateway. See ADR 0003.
+- Confirm mandatory nested sign-then-encrypt response handling and signature-key rotation.
 - Demonstrate strict algorithm allow-listing and rejection of malformed or modified envelopes.
 - Measure message-size overhead and latency for representative JSON payloads.
 - Document request replay storage, retries, and duplicate business-operation handling.

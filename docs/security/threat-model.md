@@ -1,6 +1,6 @@
 # EnvelopeKit threat model
 
-**Status: working draft for review.** This describes the proposed security boundary. It is not a protocol specification and does not mean the current scaffold protects traffic.
+**Status: working draft, threat assumptions agreed on 27 November 2026.** The design includes an active gateway that may alter traffic and key discovery. API responses must be signed before encryption in the first version. This is not a protocol specification and the current scaffold does not protect traffic.
 
 ## Security objective
 
@@ -52,7 +52,7 @@ An AEAD tag proves that ciphertext and authenticated metadata were not changed a
 
 ### Key discovery is part of the security boundary
 
-If the SDK fetches the API public key from a key-set URL and a gateway can replace that response, the gateway can direct the SDK to encrypt to an attacker key. Key discovery therefore needs a trust anchor that survives TLS termination, such as a configured key or root-key fingerprint, or a signed key set verified against a configured root. Rotation and recovery must be designed with that trust anchor.
+If the SDK fetches the API public key from a key-set URL and a gateway can replace that response, the gateway can direct the SDK to encrypt to an attacker key. Key discovery therefore needs a trust anchor that survives TLS termination. The current proposal is a signed key manifest verified against a root public key configured by the application developer. The root must not be learned solely from the same untrusted key endpoint. Rotation and recovery must preserve that trust anchor. See the [key discovery proposal](../decisions/0003-key-discovery.md).
 
 ## Proposed request and response shape
 
@@ -61,7 +61,7 @@ This is a design sketch, not a format decision.
 1. The client authenticates the API public encryption key using the configured trust method.
 2. For each request, the client creates a fresh response key pair and encrypts an inner envelope containing the JSON body, response public key, request identifier, expiry, and request context.
 3. The client sends the encrypted envelope over HTTPS. The API authenticates and authorises the caller, decrypts the body, validates request context and expiry, and atomically records the request identifier before application processing.
-4. The API returns the application result encrypted to the one-use response public key. To protect response origin against a modifying gateway, the API signs the response before encrypting it.
+4. The API signs the application result with its response-signing key, then encrypts it to the one-use response public key. Both operations are required in the first version.
 5. The client decrypts the response, verifies the API signature and request correlation, then returns ordinary JSON to the calling application.
 
 The API must validate that protected request context matches the actual HTTP method and target. Do not trust routing or authorization claims merely because they appear in an encrypted body.
@@ -76,6 +76,7 @@ Anti-replay identifiers and business idempotency keys solve different problems. 
 
 - Hiding HTTP metadata, traffic patterns, or body length.
 - Protecting plaintext on a compromised or jailbroken device, or from XSS and malicious browser extensions.
+- Protecting a browser SDK when the same untrusted gateway can replace the web application's JavaScript. Modified JavaScript can read plaintext before encryption or expose it after decryption. Web support can claim protection from a gateway only when the application code and its configured trust root are delivered through a separately trusted path.
 - Protecting data from the API or its operators after decryption.
 - Replacing TLS, OAuth/OIDC, API authentication, authorisation, CSRF controls, input validation, rate limiting, or application idempotency.
 - Preventing denial of service, traffic blocking, or business-logic abuse.
