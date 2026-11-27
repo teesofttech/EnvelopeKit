@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>EnvelopeKit.Protocol</AssemblyName>
+    <RootNamespace>EnvelopeKit.Protocol</RootNamespace>
+    <Description>Protocol abstractions for the EnvelopeKit HTTP payload protection project.</Description>
+  </PropertyGroup>
+</Project>

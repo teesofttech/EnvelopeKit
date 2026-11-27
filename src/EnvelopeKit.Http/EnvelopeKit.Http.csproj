@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>EnvelopeKit.Http</AssemblyName>
+    <RootNamespace>EnvelopeKit.Http</RootNamespace>
+    <Description>HTTP client integration for EnvelopeKit.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../EnvelopeKit.Protocol/EnvelopeKit.Protocol.csproj" />
+  </ItemGroup>
+</Project>

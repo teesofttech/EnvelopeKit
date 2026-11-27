@@ -1,0 +1,16 @@
+## .NET
+[Bb]in/
+[Oo]bj/
+[Ll]ogs/
+*.user
+*.suo
+*.cache
+
+## IDE
+.vs/
+.idea/
+.vscode/
+
+## OS
+.DS_Store
+Thumbs.db

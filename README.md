@@ -2,7 +2,7 @@
 
 **A language-neutral protocol and developer toolkit for encrypted HTTP payloads.**
 
-> **Status: design stage.** There is no implementation yet. The protocol, cryptographic profile, package APIs, supported .NET versions and production behaviour are not final. Do not use this project to protect real data.
+> **Status: project scaffold.** The .NET solution and package boundaries are in place, but there is no encryption implementation. The protocol, cryptographic profile, package APIs and production behaviour are not final. Do not use this project to protect real data.
 
 EnvelopeKit is being designed to encrypt selected JSON request bodies before they pass through HTTP gateways, then decrypt them inside the API before application processing. The API can encrypt its JSON response for the calling app to decrypt.
 
@@ -284,6 +284,30 @@ Before a protocol version is called stable, the project should publish:
 6. Add samples for local development, distributed replay storage, key rotation and error handling.
 7. Add browser and mobile clients after the protocol is stable.
 8. Arrange independent security review before a production release.
+
+## Development setup
+
+The repository currently contains project scaffolding only. The sample API exposes a health endpoint, and the sample client is a placeholder. Neither demonstrates encrypted HTTP traffic.
+
+Requirements: .NET 10 SDK.
+
+```bash
+dotnet build EnvelopeKit.sln
+dotnet run --project samples/EnvelopeKit.SampleApi
+dotnet run --project samples/EnvelopeKit.SampleClient
+```
+
+The build confirms the scaffold compiles. It does not indicate that payload encryption or replay protection is available.
+
+### Solution layout
+
+| Path | Intended responsibility |
+| --- | --- |
+| `src/EnvelopeKit.Protocol` | Protocol types and rules shared by the .NET packages |
+| `src/EnvelopeKit.Http` | Client-side HTTP integration |
+| `src/EnvelopeKit.AspNetCore` | ASP.NET Core server integration |
+| `samples/EnvelopeKit.SampleApi` | Placeholder ASP.NET Core host |
+| `samples/EnvelopeKit.SampleClient` | Placeholder client application |
 
 ## Contributing
 

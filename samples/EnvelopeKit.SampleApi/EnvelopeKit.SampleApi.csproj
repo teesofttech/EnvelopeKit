@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <AssemblyName>EnvelopeKit.SampleApi</AssemblyName>
+    <RootNamespace>EnvelopeKit.SampleApi</RootNamespace>
+  </PropertyGroup>
+</Project>

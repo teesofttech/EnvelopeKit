@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>EnvelopeKit.AspNetCore</AssemblyName>
+    <RootNamespace>EnvelopeKit.AspNetCore</RootNamespace>
+    <Description>ASP.NET Core integration for EnvelopeKit.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <ProjectReference Include="../EnvelopeKit.Protocol/EnvelopeKit.Protocol.csproj" />
+  </ItemGroup>
+</Project>
