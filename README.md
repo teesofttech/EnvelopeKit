@@ -2,7 +2,7 @@
 
 **A language-neutral protocol and developer toolkit for encrypted HTTP payloads.**
 
-> **Project status: design stage.** EnvelopeKit is not implemented and is not ready for production use. The protocol, algorithms, package APIs and license are not final.
+> **Project status: design stage.** EnvelopeKit is not implemented and is not ready for production use. The protocol, algorithms and package APIs are not final.
 
 EnvelopeKit is intended to help an application encrypt JSON request bodies before they pass through HTTP gateways, then let the API decrypt them before processing. The API can encrypt its JSON response so the calling app can decrypt it.
 
@@ -135,7 +135,7 @@ Security issues should be reported privately to the maintainer rather than opene
 
 ## Licence
 
-No licence has been selected yet. Until a licence file is added, assume that no permission is granted to use, modify or redistribute the project.
+EnvelopeKit is licensed under the [MIT License](LICENSE).
 
 ## Acknowledgements
 
