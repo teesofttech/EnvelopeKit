@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>EnvelopeKit.Cryptography</AssemblyName>
+    <RootNamespace>EnvelopeKit.Cryptography</RootNamespace>
+    <Description>Restricted JOSE operations for EnvelopeKit's .NET implementation.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="jose-jwt" Version="5.3.0" />
+    <ProjectReference Include="../EnvelopeKit.Protocol/EnvelopeKit.Protocol.csproj" />
+  </ItemGroup>
+</Project>

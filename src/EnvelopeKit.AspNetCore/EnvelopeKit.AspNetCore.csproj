@@ -7,5 +7,6 @@
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <ProjectReference Include="../EnvelopeKit.Protocol/EnvelopeKit.Protocol.csproj" />
+    <ProjectReference Include="../EnvelopeKit.Cryptography/EnvelopeKit.Cryptography.csproj" />
   </ItemGroup>
 </Project>
