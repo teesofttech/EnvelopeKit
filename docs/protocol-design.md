@@ -1,6 +1,6 @@
 # Protocol design draft
 
-**Status: design draft.** JWE has been selected as the message-encryption format. This document proposes message and key-manifest shapes for review. It is not a normative wire specification, and no implementation is ready for real data.
+**Status: design draft.** JWE has been selected as the message-encryption format. This document proposes message shapes and links to the key-manifest and replay rules for review. It is not a normative wire specification, and no implementation is ready for real data.
 
 ## Protocol layers
 
@@ -10,23 +10,11 @@
 - A signed, versioned key manifest lets clients authenticate the API's encryption and response-verification keys using the root public key configured by the application.
 - API authentication and authorisation remain separate from payload encryption.
 
-## Key manifest proposal
+## Key manifest and key rotation
 
-The application configures a trusted root public key for its API. The API publishes a signed manifest containing only public operational keys.
+The application configures a trusted API root public key. The API publishes a signed manifest with public operational keys. Clients verify the JWS against the configured root and validate issuer, audience, freshness, version, key purpose, and algorithm before using any key. Planned rotation uses a signed manifest that overlaps old and new public keys. Emergency revocation cannot reach offline clients until they refresh or their cached manifest expires.
 
-Candidate manifest fields:
-
-| Field | Purpose |
-| --- | --- |
-| `issuer` | Identifies the API that issued the manifest |
-| `audience` | Binds the manifest to the configured API/application |
-| `version` | Monotonically increasing manifest version |
-| `issuedAt`, `expiresAt` | Freshness window |
-| `keys` | Public encryption and response-verification keys |
-
-Each key should have a unique `kid`, a declared purpose (`enc` or `sig`), an allow-listed algorithm, and validity dates. Private key material must never appear in the manifest. The root key signs the manifest. The exact schema and JWS representation remain open. The current prototype uses P-256 and a compact JWS signature, but these details remain provisional pending broader runtime checks.
-
-Clients should reject invalid signatures, wrong issuer or audience, expired manifests, duplicate key identifiers, key-purpose mismatches, unsupported algorithms, and detectable rollback. Key rotation should publish old and new public keys together for a controlled overlap. Emergency revocation and root-key replacement procedures still need definition.
+The proposed schema, validation rules, freshness model, rotation procedure, and recovery limits are in [Key manifest and replay protection proposal](key-manifest-and-replay.md). The schema remains provisional.
 
 ## Request message proposal
 
@@ -53,23 +41,19 @@ The client decrypts the response, verifies the API signature and key purpose, ch
 
 Responses for requests rejected before the client response key can be trusted need generic failure handling. Error messages must not expose plaintext, key material, decryption internals, or unnecessary validation distinctions.
 
-## Replay and retry proposal
+## Replay and retry
 
-- Replay state must be shared and atomically written across API instances.
-- The replay key should be scoped to the authenticated caller and request identifier.
-- The API rejects a duplicate request identifier within its accepted validity window.
-- A timestamp without a replay store does not prevent duplicate processing.
-- A retry creates a new protocol request identifier and fresh response key.
-- Business idempotency is separate. Applications should use an idempotency key for operations that must not execute twice after a failed or uncertain response.
-- The protocol and middleware must define what happens if the replay record is stored but application processing fails.
+Replay protection uses a shared, atomic store. The replay key is scoped to the authenticated caller and API audience, not to an identity claimed only inside the encrypted request. The API records a valid request identifier before invoking application processing. Store failure is fail-closed. A duplicate attempt is rejected without invoking the endpoint.
+
+Each retry uses a new protocol request identifier and a fresh one-use response key. Application idempotency remains a separate mechanism for preventing duplicate business actions after an uncertain outcome. These rules and the proposed store operation are detailed in [Key manifest and replay protection proposal](key-manifest-and-replay.md).
 
 ## Decisions still required
 
 1. JWE and JWS serialisations for the HTTP body and nested response.
 2. The interoperable algorithm profile, including key curve and signature algorithm.
-3. The exact signed manifest schema, trust-root signature format, freshness window, and rollback policy.
+3. Concrete manifest freshness, cache, clock-skew, and maximum request-lifetime defaults.
 4. Canonical HTTP target rules and which headers, if any, are cryptographically bound.
-5. Replay retention, distributed store interface, error behaviour, and retry policy.
+5. Exact replay-store .NET interface, error behaviour, and duplicate-response mapping.
 6. Which routes and JSON media types are protected by default.
 
-See [ADR 0002](../decisions/0002-cryptographic-profile.md) for the accepted JWE decision and remaining profile work.
+See [ADR 0002](decisions/0002-cryptographic-profile.md) for the accepted JWE decision and remaining profile work, and [ADR 0003](decisions/0003-key-discovery.md) for the accepted trust model.
