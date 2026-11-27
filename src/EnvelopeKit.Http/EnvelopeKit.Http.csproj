@@ -6,5 +6,6 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../EnvelopeKit.Protocol/EnvelopeKit.Protocol.csproj" />
+    <ProjectReference Include="../EnvelopeKit.Cryptography/EnvelopeKit.Cryptography.csproj" />
   </ItemGroup>
 </Project>
