@@ -2,11 +2,11 @@
 
 **A language-neutral protocol and developer toolkit for encrypted HTTP payloads.**
 
-> **Status: project scaffold.** The .NET solution and package boundaries are in place, but there is no encryption implementation. The protocol, cryptographic profile, package APIs and production behaviour are not final. Do not use this project to protect real data.
+> **Status: early .NET implementation, not production-ready.** The repository now contains provisional JOSE primitives, P-256 key helpers, signed key-manifest validation, and an in-progress encrypted HTTP client. The wire protocol, cryptographic profile, API middleware, replay integration, interoperability vectors and package APIs are not final. Do not use this project to protect real data.
 
 EnvelopeKit is being designed to encrypt selected JSON request bodies before they pass through HTTP gateways, then decrypt them inside the API before application processing. The API can encrypt its JSON response for the calling app to decrypt.
 
-The first implementation is planned for .NET, with a client SDK and ASP.NET Core middleware. The message protocol will be documented independently so that browser, mobile and other language clients can interoperate later.
+The first implementation targets .NET. The cryptographic and key-manifest foundation is in main, and the client HTTP pipeline is being developed. ASP.NET Core middleware, replay-store integration and a stable cross-language protocol remain to be built. Browser, mobile and other language clients can follow after the .NET profile is stable.
 
 ## At a glance
 
