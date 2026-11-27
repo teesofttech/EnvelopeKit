@@ -1,9 +1,11 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
+import { createServer } from 'node:http';
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { chromium } from 'playwright';
 import {
   CompactEncrypt,
   compactDecrypt,
@@ -16,9 +18,78 @@ import {
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = path.resolve(scriptDirectory, '../../..');
 const dotnetProject = path.join(scriptDirectory, '../dotnet/JweInterop.csproj');
+const browserHtmlPath = path.join(scriptDirectory, 'browser.html');
 const dataDirectory = await mkdtemp(path.join(os.tmpdir(), 'envelopekit-jwe-'));
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
+
+
+async function runChromiumExchange() {
+  const staticRoot = path.resolve(scriptDirectory);
+  const server = createServer(async (request, response) => {
+    try {
+      const pathname = new URL(request.url ?? '/', 'http://127.0.0.1').pathname;
+      if (request.method === 'GET' && pathname === '/') {
+        response.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+        response.end(await readFile(browserHtmlPath));
+        return;
+      }
+      if (request.method === 'GET' && pathname === '/api-encryption-public.jwk.json') {
+        response.writeHead(200, { 'content-type': 'application/json' });
+        response.end(await readFile(path.join(dataDirectory, 'api-encryption.public.jwk.json')));
+        return;
+      }
+      if (request.method === 'GET' && pathname === '/api-signing-public.jwk.json') {
+        response.writeHead(200, { 'content-type': 'application/json' });
+        response.end(await readFile(path.join(dataDirectory, 'api-signing.public.jwk.json')));
+        return;
+      }
+      if (request.method === 'GET' && pathname.startsWith('/node_modules/')) {
+        const filePath = path.resolve(staticRoot, `.${pathname}`);
+        if (!filePath.startsWith(`${staticRoot}${path.sep}`)) {
+          response.writeHead(400).end();
+          return;
+        }
+        response.writeHead(200, { 'content-type': 'text/javascript; charset=utf-8' });
+        response.end(await readFile(filePath));
+        return;
+      }
+      if (request.method === 'POST' && pathname === '/exchange') {
+        const chunks = [];
+        for await (const chunk of request) chunks.push(chunk);
+        const requestJwe = Buffer.concat(chunks).toString('utf8');
+        await writeFile(path.join(dataDirectory, 'request.jwe'), requestJwe);
+        runDotnet('process-request');
+        response.writeHead(200, { 'content-type': 'application/jose' });
+        response.end(await readFile(path.join(dataDirectory, 'response.jwe')));
+        return;
+      }
+      response.writeHead(404).end();
+    } catch (error) {
+      response.writeHead(500, { 'content-type': 'text/plain; charset=utf-8' });
+      response.end(String(error));
+    }
+  });
+
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const address = server.address();
+  if (!address || typeof address === 'string') throw new Error('Could not start the local browser test server.');
+  const browser = await chromium.launch({ headless: true, ...(process.env.ENVELOPEKIT_CHROME_CHANNEL ? { channel: process.env.ENVELOPEKIT_CHROME_CHANNEL } : {}) });
+  try {
+    const page = await browser.newPage();
+    const pageErrors = [];
+    page.on('pageerror', (error) => pageErrors.push(error));
+    await page.goto(`http://127.0.0.1:${address.port}/`);
+    await page.locator('#result[data-status="passed"], #result[data-status="failed"]').waitFor({ timeout: 15000 });
+    if (pageErrors.length) throw pageErrors[0];
+    const resultStatus = await page.locator('#result').getAttribute('data-status');
+    if (resultStatus !== 'passed') throw new Error(await page.locator('#result').textContent());
+    console.log('PASS: Chromium WebCrypto exchanged JWE with .NET and verified the signed response.');
+  } finally {
+    await browser.close();
+    await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+  }
+}
 
 function runDotnet(command) {
   const env = { ...process.env, ENVELOPEKIT_SPIKE_DATA: dataDirectory };
@@ -86,6 +157,8 @@ try {
   console.log('PASS: browser-compatible JOSE created a JWE request that .NET decrypted.');
   console.log('PASS: .NET signed the response with JWS, encrypted it with JWE, and the browser-compatible JOSE client verified both.');
   console.log('PASS: changing the response authentication tag caused decryption to fail.');
+
+  await runChromiumExchange();
 } finally {
   await rm(dataDirectory, { recursive: true, force: true });
 }

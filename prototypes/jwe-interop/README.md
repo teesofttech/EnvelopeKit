@@ -9,15 +9,16 @@ The spike generates temporary P-256 keys, then checks:
 3. The JavaScript client decrypts the response and verifies the API signature.
 4. A modified JWE authentication tag is rejected.
 
-The JavaScript client uses the Web API implementation exported by `jose`, which is intended for browsers and other Web-interoperable runtimes. This command runs it under Node.js, so it does not yet prove behaviour in every browser engine or mobile platform.
+The spike first runs the browser-compatible Web API implementation under Node.js, then runs the same exchange in headless Chromium. This checks an actual browser engine, but does not yet cover other browser engines or mobile platforms.
 
 ## Run
 
-Requirements: .NET 10 SDK and Node.js 24.
+Requirements: .NET 10 SDK and Node.js 24 and a Chromium browser installed by Playwright.
 
 ```sh
 cd prototypes/jwe-interop/browser
 npm ci
+npx playwright install chromium --only-shell
 npm run interop
 ```
 

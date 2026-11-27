@@ -29,6 +29,9 @@ jobs:
       - name: Install JavaScript dependencies
         run: npm ci
         working-directory: prototypes/jwe-interop/browser
+      - name: Install Chromium for the browser interoperability check
+        run: npx playwright install --with-deps chromium --only-shell
+        working-directory: prototypes/jwe-interop/browser
       - name: Run cross-runtime JWE interoperability spike
         run: npm run interop
         working-directory: prototypes/jwe-interop/browser

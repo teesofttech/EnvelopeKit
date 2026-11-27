@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>EnvelopeKit JWE browser interoperability</title>
+  <script type="importmap">
+    {"imports":{"jose":"/node_modules/jose/dist/webapi/index.js"}}
+  </script>
+</head>
+<body>
+  <pre id="result" data-status="running">Running Chromium JWE interoperability check.</pre>
+  <script type="module">
+    import {
+      CompactEncrypt,
+      compactDecrypt,
+      compactVerify,
+      exportJWK,
+      generateKeyPair,
+      importJWK,
+    } from 'jose';
+
+    const result = document.getElementById('result');
+    const encoder = new TextEncoder();
+    const decoder = new TextDecoder();
+
+    try {
+      const apiEncryptionJwk = await (await fetch('/api-encryption-public.jwk.json')).json();
+      const apiSigningJwk = await (await fetch('/api-signing-public.jwk.json')).json();
+      const apiEncryptionKey = await importJWK(apiEncryptionJwk, 'ECDH-ES');
+      const apiSigningKey = await importJWK(apiSigningJwk, 'ES256');
+      const responseKeyPair = await generateKeyPair('ECDH-ES', { crv: 'P-256' });
+      const responsePublicJwk = {
+        ...(await exportJWK(responseKeyPair.publicKey)),
+        kid: 'chromium-response-1',
+        use: 'enc',
+      };
+      const requestEnvelope = {
+        version: 1,
+        requestId: 'chromium-interop-request-001',
+        responsePublicKey: responsePublicJwk,
+        body: { message: 'Chromium browser request to .NET' },
+      };
+      const requestJwe = await new CompactEncrypt(encoder.encode(JSON.stringify(requestEnvelope)))
+        .setProtectedHeader({ alg: 'ECDH-ES', enc: 'A256GCM', kid: apiEncryptionJwk.kid })
+        .encrypt(apiEncryptionKey);
+      const response = await fetch('/exchange', {
+        method: 'POST',
+        headers: { 'content-type': 'application/jose' },
+        body: requestJwe,
+      });
+      if (!response.ok) throw new Error(`The .NET test server returned HTTP ${response.status}.`);
+      const responseJwe = await response.text();
+      const { plaintext: signedResponseBytes, protectedHeader } = await compactDecrypt(responseJwe, responseKeyPair.privateKey);
+      if (protectedHeader.alg !== 'ECDH-ES' || protectedHeader.enc !== 'A256GCM') {
+        throw new Error('The response JWE algorithms did not match the expected allow-list.');
+      }
+      const { payload, protectedHeader: signatureHeader } = await compactVerify(
+        decoder.decode(signedResponseBytes),
+        apiSigningKey,
+      );
+      if (signatureHeader.alg !== 'ES256' || signatureHeader.kid !== apiSigningJwk.kid) {
+        throw new Error('The response signature header did not match the expected allow-list.');
+      }
+      const responseEnvelope = JSON.parse(decoder.decode(payload));
+      if (responseEnvelope.requestId !== requestEnvelope.requestId ||
+          responseEnvelope.body.echoed.message !== requestEnvelope.body.message ||
+          responseEnvelope.body.accepted !== true) {
+        throw new Error('The signed response did not match the request.');
+      }
+      result.dataset.status = 'passed';
+      result.textContent = 'PASS: Chromium encrypted a request, .NET decrypted and returned a signed JWE response, and Chromium verified it.';
+    } catch (error) {
+      result.dataset.status = 'failed';
+      result.textContent = `FAIL: ${error instanceof Error ? error.message : String(error)}`;
+      throw error;
+    }
+  </script>
+</body>
+</html>

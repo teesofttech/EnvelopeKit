@@ -29,7 +29,7 @@ The request plaintext envelope would carry the application JSON, a fresh respons
 
 ## Interoperability evidence and remaining work
 
-The prototype at [prototypes/jwe-interop](../prototypes/jwe-interop/README.md) passed a compact JWE round trip between .NET `jose-jwt` 5.3.0 and the browser-compatible Web API implementation in JavaScript `jose` 6.2.16, run under Node.js 24. It also passed .NET JWS ES256 signing with JavaScript verification, and rejected a modified JWE authentication tag. This is useful evidence, but Node.js is not an actual browser engine and no mobile runtime has been checked. The prototype library versions are not production dependency decisions.
+The prototype at [prototypes/jwe-interop](../prototypes/jwe-interop/README.md) passed a compact JWE round trip between .NET `jose-jwt` 5.3.0 and the browser-compatible Web API implementation in JavaScript `jose` 6.2.16, run under Node.js 24. It also passed .NET JWS ES256 signing with JavaScript verification, and rejected a modified JWE authentication tag. This is useful evidence, but the Node.js check is not an actual browser engine test. The prototype now includes a headless Chromium run in CI; that run must pass before we count browser-engine interoperability as verified. No mobile runtime has been checked. The prototype library versions are not production dependency decisions.
 
 Microsoft IdentityModel 8.23.0 is not currently a drop-in implementation for this candidate: its public issue tracker documents direct ECDH-ES handler limitations and ECDH-ES+A*KW with AES-GCM incompatibility. Reassess this before choosing a production .NET JOSE dependency.
 
