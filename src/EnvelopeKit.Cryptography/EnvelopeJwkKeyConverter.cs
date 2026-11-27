@@ -36,7 +36,17 @@ public static class EnvelopeJwkKeyConverter
         EnsureP256(key);
 
         var parameters = key.ExportParameters(includePrivateParameters: true);
-        return SerializeJwk(parameters, keyId, "enc", "ECDH-ES", includePrivate: true);
+        try
+        {
+            return SerializeJwk(parameters, keyId, "enc", "ECDH-ES", includePrivate: true);
+        }
+        finally
+        {
+            if (parameters.D is not null)
+            {
+                CryptographicOperations.ZeroMemory(parameters.D);
+            }
+        }
     }
 
     /// <summary>Exports a public ECDSA key as a response-verification JWK.</summary>
@@ -61,7 +71,17 @@ public static class EnvelopeJwkKeyConverter
         EnsureP256(key);
 
         var parameters = key.ExportParameters(includePrivateParameters: true);
-        return SerializeJwk(parameters, keyId, "sig", "ES256", includePrivate: true);
+        try
+        {
+            return SerializeJwk(parameters, keyId, "sig", "ES256", includePrivate: true);
+        }
+        finally
+        {
+            if (parameters.D is not null)
+            {
+                CryptographicOperations.ZeroMemory(parameters.D);
+            }
+        }
     }
 
     /// <summary>Imports a public P-256 ECDH encryption JWK.</summary>
