@@ -276,7 +276,7 @@ public static class EnvelopeKeyManifestValidator
         }
 
         var padded = coordinate.Replace('-', '+').Replace('_', '/');
-        padded = padded.Length % 4 switch
+        padded = (padded.Length % 4) switch
         {
             0 => padded,
             2 => padded + "==",
