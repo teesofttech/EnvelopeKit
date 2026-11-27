@@ -49,7 +49,7 @@ The API validates that method and target match the actual HTTP request. It authe
 
 The API creates a response envelope containing the protocol version, request identifier, HTTP status, content type, and application JSON response body. It signs this response envelope with a response-signing key from the trusted manifest, then encrypts the signed result to the one-use response public key from the request.
 
-The client decrypts the response, verifies the API signature and key purpose, checks the request identifier, and only then returns the JSON response to the calling application. The initial prototype uses compact JWS nested inside compact JWE. This round trip passed between .NET and the browser-compatible JavaScript JOSE library under Node.js 24. The prototype now includes an actual Chromium run in CI. Its result must pass before browser interoperability is marked verified. Mobile engine checks also remain outstanding before those serialisations and the candidate algorithm profile can be frozen.
+The client decrypts the response, verifies the API signature and key purpose, checks the request identifier, and only then returns the JSON response to the calling application. The initial prototype uses compact JWS nested inside compact JWE. This round trip passed between .NET and the browser-compatible JavaScript JOSE library under Node.js 24. The actual Chromium run in CI has passed. Mobile engine checks remain outstanding before those serialisations and the candidate algorithm profile can be frozen.
 
 Responses for requests rejected before the client response key can be trusted need generic failure handling. Error messages must not expose plaintext, key material, decryption internals, or unnecessary validation distinctions.
 
