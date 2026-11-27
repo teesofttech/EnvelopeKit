@@ -8,6 +8,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EnvelopeKit.Http", "src\Env
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EnvelopeKit.AspNetCore", "src\EnvelopeKit.AspNetCore\EnvelopeKit.AspNetCore.csproj", "{B5F9A02E-B007-4E25-86D5-FE2499AA1E70}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EnvelopeKit.Cryptography", "src\EnvelopeKit.Cryptography\EnvelopeKit.Cryptography.csproj", "{C0C01907-7D95-467A-B1DF-EBA11E2A3B47}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EnvelopeKit.SampleApi", "samples\EnvelopeKit.SampleApi\EnvelopeKit.SampleApi.csproj", "{62899BC9-4569-44F2-901C-00426A6D6172}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EnvelopeKit.SampleClient", "samples\EnvelopeKit.SampleClient\EnvelopeKit.SampleClient.csproj", "{09483663-0455-47E0-9C8C-28EC5535C70D}"
@@ -30,12 +32,16 @@ Global
     {B5F9A02E-B007-4E25-86D5-FE2499AA1E70}.Debug|Any CPU.Build.0 = Debug|Any CPU
     {B5F9A02E-B007-4E25-86D5-FE2499AA1E70}.Release|Any CPU.ActiveCfg = Release|Any CPU
     {B5F9A02E-B007-4E25-86D5-FE2499AA1E70}.Release|Any CPU.Build.0 = Release|Any CPU
+    {C0C01907-7D95-467A-B1DF-EBA11E2A3B47}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+    {C0C01907-7D95-467A-B1DF-EBA11E2A3B47}.Debug|Any CPU.Build.0 = Release|Any CPU
+    {C0C01907-7D95-467A-B1DF-EBA11E2A3B47}.Release|Any CPU.ActiveCfg = Release|Any CPU
+    {C0C01907-7D95-467A-B1DF-EBA11E2A3B47}.Release|Any CPU.Build.0 = Release|Any CPU
     {62899BC9-4569-44F2-901C-00426A6D6172}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
     {62899BC9-4569-44F2-901C-00426A6D6172}.Debug|Any CPU.Build.0 = Debug|Any CPU
     {62899BC9-4569-44F2-901C-00426A6D6172}.Release|Any CPU.ActiveCfg = Release|Any CPU
     {62899BC9-4569-44F2-901C-00426A6D6172}.Release|Any CPU.Build.0 = Release|Any CPU
     {09483663-0455-47E0-9C8C-28EC5535C70D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-    {09483663-0455-47E0-9C8C-28EC5535C70D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+    {09483663-0455-47E0-9C8C-28EC5535C70D}.Debug|Any CPU.Build.0 = Release|Any CPU
     {09483663-0455-47E0-9C8C-28EC5535C70D}.Release|Any CPU.ActiveCfg = Release|Any CPU
     {09483663-0455-47E0-9C8C-28EC5535C70D}.Release|Any CPU.Build.0 = Release|Any CPU
   EndGlobalSection
