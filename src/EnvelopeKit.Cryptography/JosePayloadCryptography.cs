@@ -18,7 +18,7 @@ public sealed class JosePayloadCryptography
         new(StringComparer.Ordinal) { "alg", "enc", "epk", "kid" };
 
     private static readonly HashSet<string> JwsHeaders =
-        new(StringComparer.Ordinal) { "alg", "kid" };
+        new(StringComparer.Ordinal) { "alg", "kid", "typ" };
 
     /// <summary>
     /// Encrypts bytes as a compact JWE for a P-256 recipient key.
@@ -76,7 +76,8 @@ public sealed class JosePayloadCryptography
     public string SignCompactJws(
         ReadOnlySpan<byte> payload,
         ECDsa signingPrivateKey,
-        string keyId)
+        string keyId,
+        string? type = null)
     {
         ArgumentNullException.ThrowIfNull(signingPrivateKey);
         ValidateKeyId(keyId);
@@ -86,6 +87,12 @@ public sealed class JosePayloadCryptography
         {
             ["kid"] = keyId
         };
+
+        if (type is not null)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(type);
+            headers["typ"] = type;
+        }
 
         return JWT.EncodeBytes(
             payload.ToArray(),
@@ -101,13 +108,14 @@ public sealed class JosePayloadCryptography
     public byte[] VerifyCompactJws(
         string compactJws,
         ECDsa signingPublicKey,
-        string expectedKeyId)
+        string expectedKeyId,
+        string? expectedType = null)
     {
         ArgumentNullException.ThrowIfNull(signingPublicKey);
         ValidateKeyId(expectedKeyId);
         EnsureP256(signingPublicKey);
         ValidateCompactToken(compactJws, expectedSegments: 3);
-        ValidateProtectedHeaders(compactJws, JwsHeaders, expectedKeyId, "ES256");
+        ValidateProtectedHeaders(compactJws, JwsHeaders, expectedKeyId, "ES256", expectedType: expectedType);
 
         return JWT.VerifyBytes(
             compactJws,
@@ -153,7 +161,8 @@ public sealed class JosePayloadCryptography
         HashSet<string> allowedHeaders,
         string expectedKeyId,
         string expectedAlgorithm,
-        string? expectedEncryption = null)
+        string? expectedEncryption = null,
+        string? expectedType = null)
     {
         var headers = JWT.Headers(compactToken, CreateRestrictedSettings());
 
@@ -172,6 +181,18 @@ public sealed class JosePayloadCryptography
             !string.Equals(algorithm as string, expectedAlgorithm, StringComparison.Ordinal))
         {
             throw new CryptographicException("The JOSE algorithm does not match the configured profile.");
+        }
+
+        if (expectedType is null && headers.ContainsKey("typ"))
+        {
+            throw new CryptographicException("The JOSE protected header contains an unexpected type.");
+        }
+
+        if (expectedType is not null &&
+            (!headers.TryGetValue("typ", out var type) ||
+             !string.Equals(type as string, expectedType, StringComparison.Ordinal)))
+        {
+            throw new CryptographicException("The JOSE protected type does not match the expected message type.");
         }
 
         if (expectedEncryption is not null &&
