@@ -1,6 +1,6 @@
 # ADR 0003: API key discovery and trust
 
-- Status: Accepted for the trust model; manifest wire format remains open
+- Status: Accepted for the trust model; manifest wire format remains proposed
 - Decision: Each SDK integration supplies a trusted API root public key through application configuration. The API publishes a signed, versioned key manifest. Clients verify the manifest against the configured root before using its encryption or response-verification keys. EnvelopeKit will not operate a central key service.
 - Context: The agreed threat model includes a gateway that may replace the API's public key response. HTTPS to that gateway is not an independent trust anchor when it terminates TLS.
 
@@ -22,7 +22,7 @@
 5. Planned rotation publishes old and new keys together for a defined overlap. The API retains old private decryption keys only as long as accepted requests may still use them. Expired or revoked keys are rejected according to a documented policy.
 6. Clients reject a manifest that is invalid or beyond its freshness window. Where the platform permits, clients retain the highest accepted manifest version to detect rollback.
 
-Use established JWS/JWK mechanisms where suitable. JWK defines key purpose values such as `enc` and `sig`; the protocol must require separate keys and explicit purposes. The exact signed manifest schema, JWS serialization, root-key storage API, and freshness and rollback rules remain open for the protocol design.
+Use established JWS/JWK mechanisms where suitable. JWK defines key purpose values such as `enc` and `sig`; the protocol must require separate keys and explicit purposes. The proposed JWS representation, manifest fields, validation rules, freshness model, rotation procedure, and recovery limits are documented in the [key manifest and replay protection proposal](../key-manifest-and-replay.md). They remain provisional until the cross-runtime profile is selected.
 
 The root signing private key should be held outside the online API runtime where practical. It authorises manifest updates. Online encryption and response-signing keys are separate operational keys. Planned rotations publish a signed manifest with an overlap period. Emergency revocation, root-key replacement, and recovery must be specified before production use.
 
@@ -34,10 +34,10 @@ If the web app and API share the same infrastructure trust boundary, EnvelopeKit
 
 ## Remaining design questions
 
-- What exact manifest schema and JWS serialization should the protocol standardise?
-- What freshness window and rollback policy work across mobile devices and browser sessions?
-- How are root-key rotation, emergency compromise, and recovery handled?
+- What freshness and cache defaults work across mobile devices and browser sessions?
+- How are root-key rotation, emergency compromise, and recovery handled operationally?
 - What SDK configuration API should expose the root key and storage/version checks?
+- What key-manifest wire details should be frozen after the cross-runtime profile is selected?
 
 ## References
 
