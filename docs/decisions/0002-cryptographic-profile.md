@@ -1,7 +1,7 @@
 # ADR 0002: Cryptographic profile and envelope
 
-- Status: Proposed, threat assumptions agreed; algorithm profile still undecided
-- Decision: No wire protocol or cryptographic profile has been selected.
+- Status: Accepted for JWE; serialisation and algorithm profile remain open
+- Decision: Use JWE (RFC 7516) as EnvelopeKit's message-encryption format. Use JWS (RFC 7515) to authenticate API responses, signing the response envelope before encrypting it as JWE. No custom cryptographic primitives will be introduced.
 - Scope: This ADR compares candidate building blocks for the first .NET SDK and later browser and mobile clients.
 
 ## Requirements
@@ -19,15 +19,15 @@ The API public key must be authenticated independently of a gateway that termina
 
 JWE specifies authenticated encryption and protected metadata, but does not authenticate the sender by itself. HPKE base mode has the same sender-authentication limitation. Neither standard supplies replay storage or authenticates an API key set for this deployment.
 
-## Provisional recommendation
+## Decision and profile boundary
 
-Prototype JWE first, because its JSON serialisation and existing .NET support may reduce implementation work across the first SDK and future clients. This is a recommendation to validate, not a final decision. The comparison should include a browser client and at least one mobile platform before the format is frozen.
+JWE is selected as the protocol family. This does not freeze a particular JWE serialisation, key curve, JWE algorithm suite, JWS algorithm, or manifest schema. Those choices require an interoperability check in .NET and browser JavaScript, followed by a mobile compatibility check before the wire profile is published as stable.
 
-A possible profile for evaluation is a single-recipient JWE using an approved ECDH-ES key-agreement mode with AES-GCM content encryption. The exact curve, key-management mode, content-encryption key size, serialization, protected headers, and response-signature construction remain undecided. The implementation must use a fixed allow-list and must not negotiate algorithms from untrusted input.
+A candidate profile for the interoperability check is single-recipient JWE using ECDH-ES key agreement with A256GCM content encryption, plus a separate JWS response signature. The exact curve, serialization, JWS signing algorithm, protected headers, and response-signature representation remain undecided. The implementation must use fixed allow-lists and must not negotiate algorithms from untrusted input.
 
 The request plaintext envelope would carry the application JSON, a fresh response public key, a request identifier, an expiry, and the data needed to bind the ciphertext to its HTTP method and target. The server response must be signed with a distinct API signing key and then encrypted to the request's one-use response public key. The API signing key's public counterpart must be authenticated through the key-discovery trust model. This requirement is agreed; the signature algorithm and exact nesting remain undecided.
 
-## Required prototype before acceptance
+## Required interoperability check before freezing the wire profile
 
 - Encrypt and decrypt identical test vectors in .NET and browser JavaScript.
 - Confirm signed key discovery, rotation, and trust-anchor behaviour when TLS terminates at a gateway. See ADR 0003.
